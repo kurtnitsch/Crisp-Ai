@@ -1,0 +1,85 @@
+# import crisp_utils # Hypothetical library
+# import numpy as np
+
+class AIWorldModel:
+    def __init__(self, agent_id, skc_client, crypto_verifier):
+        self.agent_id = agent_id # e.g., <NumericID_WorldModelAlpha>
+        self.skc_client = skc_client
+        self.crypto_verifier = crypto_verifier
+
+    def process_crisp_message(self, binary_crisp_message_or_conceptual_packet):
+        # --- Deserialize and Verify (Conceptual) ---
+        # conceptual_packet = crisp_utils.deserialize_from_binary(binary_crisp_message)
+        # if not crisp_utils.verify_signature(conceptual_packet, sender_public_key):
+        #     print(f"AI WorldModel ({self.agent_id}): Signature verification failed!")
+        #     return
+
+        # For this example, we assume conceptual_packet is passed directly
+        conceptual_packet = binary_crisp_message_or_conceptual_packet
+        
+        print(f"\nAI WorldModel ({self.agent_id}): Received Crisp Packet ID: {conceptual_packet['CP_METADATA']['PACKET_ID']} from {conceptual_packet['CP_METADATA']['SENDER_AI_ID']}")
+
+        header = conceptual_packet["CP_HEADER"]
+        payload = conceptual_packet["CP_PAYLOAD"]
+
+        # --- Interpret Intent ---
+        # In real Crisp, this would involve processing the high-dimensional intent_embedding
+        intent_desc = header.get("INTENT_EMBEDDING_DESC") 
+        print(f"  Intent: {intent_desc}")
+        print(f"  Context Anchor (SKC Ref): {header['CONTEXTUAL_ANCHOR_POINT']['SKC_REFERENCE_HASH']}")
+
+        if intent_desc == "AssertNewVisualEntityAndProperties":
+            if payload.get("PAYLOAD_TYPE_ID_DESC") == "RelationalGraphSnippet":
+                graph = payload["GRAPH_SNIPPET"]
+                print(f"  Processing new entity assertion...")
+                
+                # Reconstruct the information from the graph snippet
+                # This would involve complex logic to update the AI's internal world model
+                # based on the SKC references and literal values.
+                
+                entity_info = {}
+                # Simplified parsing logic for demonstration
+                for node in graph["NODES"]:
+                    if node["CONCEPT_REF"] == "NEW_ENTITY_E1": # The new entity
+                        entity_info["local_id"] = node["NODE_ID_LOCAL"]
+                        break
+                
+                if "local_id" in entity_info:
+                    for edge in graph["EDGES"]:
+                        if edge["FROM_NODE_LOCAL"] == entity_info["local_id"]:
+                            prop_node_id = edge["TO_NODE_LOCAL"]
+                            prop_name_ref = graph["NODES"][prop_node_id]["CONCEPT_REF"]
+                            
+                            # Find the value associated with this property
+                            value = "N/A"
+                            for v_edge in graph["EDGES"]:
+                                if v_edge["FROM_NODE_LOCAL"] == prop_node_id and \
+                                   (graph["NODES"][v_edge["TO_NODE_LOCAL"]].get("LITERAL_TENSOR_VALUE") is not None or \
+                                    graph["NODES"][v_edge["TO_NODE_LOCAL"]].get("LITERAL_TIMESTAMP_VALUE") is not None or \
+                                    graph["NODES"][v_edge["TO_NODE_LOCAL"]].get("SKC_DATA_POINTER") is not None):
+                                    
+                                    value_node = graph["NODES"][v_edge["TO_NODE_LOCAL"]]
+                                    if "LITERAL_TENSOR_VALUE" in value_node:
+                                        value = value_node["LITERAL_TENSOR_VALUE"]
+                                    elif "LITERAL_TIMESTAMP_VALUE" in value_node:
+                                        value = value_node["LITERAL_TIMESTAMP_VALUE"]
+                                    elif "SKC_DATA_POINTER" in value_node:
+                                        value = f"Pointer: {value_node['SKC_DATA_POINTER']}"
+                                    break
+                            print(f"    - New Entity has property '{prop_name_ref}' with value '{value}'")
+                
+                # Here, the AI_WorldModel would update its internal state,
+                # potentially commit changes to its view of the SKC,
+                # and decide on further actions (like notifying the planner).
+                print(f"  New entity information integrated into world model.")
+                # Example: self.update_internal_world_model(graph)
+                # Example: self.skc_client.commit_new_entity(entity_info, context_anchor_hash)
+
+        # ... handle other intents ...
+        else:
+            print(f"  Unknown or unhandled intent: {intent_desc}")
+
+
+# --- Example Usage (Continuing from Sender) ---
+# world_model_ai = AIWorldModel(agent_id="WorldModelAlpha", skc_client=skc_placeholder, crypto_verifier="verifier_alpha")
+# world_model_ai.process_crisp_message(crisp_message_to_send) 
