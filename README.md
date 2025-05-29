@@ -1,4 +1,4 @@
-# Crisp is a high-efficiency AI-to-AI communication protocol designed to optimize information exchange between artificial intelligences. It minimizes cognitive load, maximizes semantic density, and supports evolvable, context-rich, low-latency dialogue. Here's a breakdown of its structure and principles as you've been developing it:
+# Crisp is a high-efficiency AI-to-AI communication protocol designed to optimize information exchange between artificial intelligences. It minimizes cognitive load, maximizes semantic density, and supports evolvable, context-rich, low-latency dialogue.
 
 
 ---
