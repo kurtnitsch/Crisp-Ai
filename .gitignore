@@ -257,3 +257,6 @@ class SKCManager:
             return None
         try:
             version, priority, count, start, end, hash_val = struct.unpack("!IBHQQ16s", incoming
+git add .
+git commit -m "Added new alignment check feature"
+git push
