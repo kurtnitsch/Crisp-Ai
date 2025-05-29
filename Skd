@@ -1,0 +1,80 @@
+import numpy as np
+import uuid
+import sqlite3
+
+class LargeScaleEmbeddingStore:
+    def __init__(self, db_file="embeddings.db", max_embeddings=1000000):
+        self.db_file = db_file
+        self.max_embeddings = max_embeddings
+        self.connect_db()
+
+
+    def connect_db(self):
+        self.conn = sqlite3.connect(self.db_file)
+        self.cursor = self.conn.cursor()
+        self.create_table_if_needed()
+
+
+    def create_table_if_needed(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS embeddings (
+                id TEXT PRIMARY KEY,
+                embedding BLOB
+            )
+        ''')
+        self.conn.commit()
+
+
+
+    def add_embedding(self, embedding):
+        if not isinstance(embedding, np.ndarray):
+            raise TypeError("Embedding must be a NumPy array.")
+        if embedding.shape[0] != 512:
+           raise ValueError("Embedding dimension must be 512.")
+
+        embedding_id = str(uuid.uuid4())
+        if len(self.get_embedding_ids()) >= self.max_embeddings:
+            raise Exception("Maximum number of embeddings reached.")
+
+        # Important: Use `tobytes()` to convert the NumPy array to bytes
+        embedding_bytes = embedding.tobytes()
+        self.cursor.execute("INSERT INTO embeddings (id, embedding) VALUES (?, ?)", (embedding_id, embedding_bytes))
+        self.conn.commit()
+        return embedding_id
+
+
+    def get_embedding(self, embedding_id):
+        self.cursor.execute("SELECT embedding FROM embeddings WHERE id = ?", (embedding_id,))
+        result = self.cursor.fetchone()
+        if result:
+            embedding_bytes = result[0]
+            return np.frombuffer(embedding_bytes, dtype=float).reshape(512)  # Crucial: Reshape
+        else:
+            raise KeyError(f"Embedding with ID '{embedding_id}' not found.")
+
+
+    def get_embedding_ids(self):
+        self.cursor.execute("SELECT id FROM embeddings")
+        return [row[0] for row in self.cursor.fetchall()]
+
+
+    def close_connection(self):
+        self.conn.close()
+
+
+
+# Example Usage
+embedding_store = LargeScaleEmbeddingStore()
+
+# Example embeddings (replace with your actual embeddings)
+embedding1 = np.random.rand(512)
+
+try:
+    id1 = embedding_store.add_embedding(embedding1)
+    retrieved_embedding1 = embedding_store.get_embedding(id1)
+    print(f"Retrieved embedding 1:\n{retrieved_embedding1}")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+
+embedding_store.close_connection()
