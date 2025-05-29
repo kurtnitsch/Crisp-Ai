@@ -1,0 +1,80 @@
+import numpy as np
+import uuid
+
+class EmbeddingStore:
+    def __init__(self, max_embeddings=10000):  # Example: limit to 10,000 embeddings
+        self.embeddings = {}
+        self.next_id = 0
+        self.max_embeddings = max_embeddings
+
+    def add_embedding(self, embedding):
+        """Adds an embedding to the store and returns its ID."""
+        if len(self.embeddings) >= self.max_embeddings:
+            raise Exception("Maximum number of embeddings reached.")
+
+        if not isinstance(embedding, np.ndarray):
+            raise TypeError("Embedding must be a NumPy array.")
+        
+        if embedding.shape[0] != 512:
+           raise ValueError("Embedding dimension must be 512.")
+
+        # Using uuid for robust and unique IDs.  Crucial for large-scale systems
+        embedding_id = str(uuid.uuid4())
+        self.embeddings[embedding_id] = embedding
+        return embedding_id
+
+    def get_embedding(self, embedding_id):
+        """Retrieves an embedding from its ID."""
+        try:
+            return self.embeddings[embedding_id]
+        except KeyError:
+            raise KeyError(f"Embedding with ID '{embedding_id}' not found.")
+
+    def get_embedding_ids(self):
+        return list(self.embeddings.keys())
+
+
+
+# Example Usage
+embedding_store = EmbeddingStore()
+
+# Example embeddings (replace with your actual embeddings)
+embedding1 = np.random.rand(512)
+embedding2 = np.random.rand(512)
+
+
+# Add embeddings and get IDs
+id1 = embedding_store.add_embedding(embedding1)
+id2 = embedding_store.add_embedding(embedding2)
+
+
+# Retrieve embeddings using IDs
+retrieved_embedding1 = embedding_store.get_embedding(id1)
+retrieved_embedding2 = embedding_store.get_embedding(id2)
+
+
+# Verify retrieval
+print(f"Retrieved embedding 1:\n{retrieved_embedding1}")
+print(f"Retrieved embedding 2:\n{retrieved_embedding2}")
+
+# Example showing errors
+try:
+    embedding_store.add_embedding(np.random.rand(513))  # incorrect dimension
+except ValueError as e:
+    print(f"Error: {e}")
+
+try:
+    embedding_store.get_embedding("not_a_valid_id")
+except KeyError as e:
+    print(f"Error: {e}")
+
+try:
+    for i in range(10001):
+        embedding_store.add_embedding(np.random.rand(512))
+except Exception as e:
+    print(f"Error: {e}") # Catching the exception when maximum is reached
+
+
+# Get all embedding IDs
+all_ids = embedding_store.get_embedding_ids()
+print(f"All embedding IDs: {all_ids}")
